@@ -22,8 +22,8 @@ Deze Laravel API beheert het menu van de Royal Donut Kitchen. Je kunt donuts opv
 1. Clone de repository:
 
    ```bash
-   git clone https://github.com/jouwgebruikersnaam/royal-donut-kitchen-api.git
-   cd royal-donut-kitchen-api
+   git clone https://github.com/dirtkingy/donutapi.git
+   cd donutapi
    ```
 
 2. Installeer dependencies via Composer:
