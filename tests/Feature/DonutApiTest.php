@@ -10,19 +10,21 @@ use App\Models\DonutApi;
 class DonutApiTest extends TestCase
 {
     /**
-     * A basic feature test example.
+     * The test method to check if the API endpoint returns all donuts.
      */
-    public function test_example(): void
+    public function test_can_return_all_donuts(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/api/donuts');
 
         $response->assertStatus(200);
     }
 
     use RefreshDatabase;
 
-    /** @test */
-    public function can_create_a_valid_donut()
+    /** 
+     * The test method to create a valid donut and assert that it was created successfully.
+     */
+    public function test_can_create_a_valid_donut()
     {
         $payload = [
             'name' => 'Test Donut',
@@ -38,8 +40,10 @@ class DonutApiTest extends TestCase
         $this->assertDatabaseHas('donuts', ['name' => 'Test Donut']);
     }
 
-    /** @test */
-    public function validation_fails_with_invalid_data()
+    /** 
+     * The test method to validate data with invalid input and ensure validation fails as expected.
+     */
+    public function test_validation_fails_with_invalid_data()
     {
         $payload = [
             'name' => '',
@@ -53,8 +57,10 @@ class DonutApiTest extends TestCase
         $response->assertJsonValidationErrors(['name', 'seal_of_approval', 'price']);
     }
 
-    /** @test */
-    public function can_delete_a_donut()
+    /** 
+     * The test method to delete an existing donut and verify its removal from the database.
+     */
+    public function test_can_delete_a_donut()
     {
         $donut = DonutApi::factory()->create();
 
@@ -66,8 +72,10 @@ class DonutApiTest extends TestCase
         $this->assertDatabaseMissing('donuts', ['id' => $donut->id]);
     }
 
-    /** @test */
-    public function delete_returns_404_if_donut_not_found()
+    /** 
+     * The test method to attempt deletion of a non-existent donut and expect a 404 response.
+     */
+    public function test_delete_returns_404_if_donut_not_found()
     {
         $response = $this->deleteJson('/api/donuts/99999');
 
@@ -75,8 +83,10 @@ class DonutApiTest extends TestCase
                  ->assertJson(['message' => 'Donut not found']);
     }
 
-     /** @test */
-    public function can_sort_donuts_by_name_ascending()
+     /** 
+      * The test method to sort donuts by name in ascending order and verify the result.
+      */
+    public function test_can_sort_donuts_by_name_ascending()
     {
         DonutApi::factory()->create(['name' => 'B Donut', 'seal_of_approval' => 3]);
         DonutApi::factory()->create(['name' => 'A Donut', 'seal_of_approval' => 5]);
@@ -90,8 +100,10 @@ class DonutApiTest extends TestCase
         $this->assertEquals('B Donut', $donuts[1]['name']);
     }
 
-    /** @test */
-    public function can_sort_donuts_by_approval_descending()
+    /** 
+     * The test method to sort donuts by approval rating in descending order and verify the result.
+     */
+    public function test_can_sort_donuts_by_approval_descending()
     {
         DonutApi::factory()->create(['name' => 'Donut One', 'seal_of_approval' => 2]);
         DonutApi::factory()->create(['name' => 'Donut Two', 'seal_of_approval' => 5]);
