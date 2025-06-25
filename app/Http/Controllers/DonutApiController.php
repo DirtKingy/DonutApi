@@ -10,56 +10,53 @@ class DonutApiController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        //
-    }
+    public function index(Request $request)
+        {
+            $sort = $request->query('sort');
+            $order = $request->query('order', 'asc');
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+            $query = DonutApi::query();
+
+            if ($sort === 'name') {
+                $query->orderBy('name', $order);
+            } elseif ($sort === 'approval') {
+                $query->orderBy('seal_of_approval', $order);
+            }
+
+            return response()->json($query->get());
+        }
+
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|unique:donuts|max:255',
+            'seal_of_approval' => 'required|integer|between:1,5',
+            'price' => 'required|numeric|min:0',
+        ]);
+
+        $donut = DonutApi::create($validated);
+
+        return response()->json($donut, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(DonutApi $donutApi)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(DonutApi $donutApi)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, DonutApi $donutApi)
-    {
-        //
-    }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DonutApi $donutApi)
+    public function destroy($id)
     {
-        //
+        $donut = DonutApi::find($id);
+
+        if (!$donut) {
+            return response()->json(['message' => 'Donut not found'], 404);
+        }
+
+        $donut->delete();
+
+        return response()->json(['message' => 'Donut deleted']);
     }
 }
