@@ -36,6 +36,21 @@ class DonutApiController extends Controller
         return DonutResource::collection($donuts);
     }
 
+    protected function clearDonutCache()
+    {
+        $orders = ['asc', 'desc'];
+        $sorts = ['name', 'approval', ''];
+
+        for ($page = 1; $page <= 10; $page++) {
+            foreach ($sorts as $sort) {
+                foreach ($orders as $order) {
+                    $key = "donuts_{$sort}_{$order}_page_{$page}";
+                    Cache::forget($key);
+                }
+            }
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -54,6 +69,7 @@ class DonutApiController extends Controller
         }
 
         $donut = DonutApi::create($validated);
+        $this->clearDonutCache();
         return new DonutResource($donut);
     }
 
@@ -69,7 +85,7 @@ class DonutApiController extends Controller
         }
 
         $donut->delete();
-
+        $this->clearDonutCache();
         return response()->json(['message' => 'Donut deleted']);
     }
 }

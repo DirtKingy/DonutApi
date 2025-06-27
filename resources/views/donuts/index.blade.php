@@ -11,60 +11,59 @@
         const form = document.getElementById('donut-form');
         let currentPage = 1;
 
-        function loadDonuts(page = 1) {
-            fetch(`/api/donuts?page=${page}`, { cache: "no-store" })
-                .then(response => response.json())
-                .then(data => {
-                    donutList.innerHTML = '';
-                    data.data.forEach(donut => {
-                        const item = document.createElement('li');
-                        item.innerHTML = `
-                            <strong>${donut.name}</strong> - Approval: ${donut.seal_of_approval} - €${donut.price}
-                            ${donut.image_url ? `<br><img src="${donut.image_url}" style="max-height: 100px;">` : ''}
-                            <br><button class="delete-btn" data-id="${donut.id}">Delete</button>
-                        `;
-                        donutList.appendChild(item);
-                    });
+        async function loadDonuts(page = 1) {
+            try {
+                const response = await fetch(`/api/donuts?page=${page}`, { cache: "no-store" });
+                const data = await response.json();
 
-                    document.querySelectorAll('.delete-btn').forEach(btn => {
-                        btn.addEventListener('click', async (e) => {
-                            const id = e.target.getAttribute('data-id');
-                            if (confirm('Weet je zeker dat je deze donut wilt verwijderen?')) {
-                                const response = await fetch(`/api/donuts/${id}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'Accept': 'application/json',
-                                    },
-                                });
-                                if (response.ok && response.status !== 204) {
-                                    loadDonuts(currentPage);
-                                } else if (response.status === 204) {
-                                    loadDonuts(currentPage);
-                                } else {
-                                    const text = await response.text();
-                                    errorBox.textContent = 'Kon donut niet verwijderen: ' + text;
-                                }
+                donutList.innerHTML = '';
+                data.data.forEach(donut => {
+                    const item = document.createElement('li');
+                    item.innerHTML = `
+                        <strong>${donut.name}</strong> - Approval: ${donut.seal_of_approval} - €${donut.price}
+                        ${donut.image_url ? `<br><img src="${donut.image_url}" style="max-height: 100px;">` : ''}
+                        <br><button class="delete-btn" data-id="${donut.id}">Delete</button>
+                    `;
+                    donutList.appendChild(item);
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        if (confirm('Weet je zeker dat je deze donut wilt verwijderen?')) {
+                            const response = await fetch(`/api/donuts/${id}`, {
+                                method: 'DELETE',
+                                headers: { 'Accept': 'application/json' },
+                            });
+                            if (response.ok) {
+                                await loadDonuts(currentPage);
+                            } else {
+                                const text = await response.text();
+                                errorBox.textContent = 'Kon donut niet verwijderen: ' + text;
                             }
-                        });
-                    });
-
-                    pagination.innerHTML = '';
-                    data.meta.links.forEach(link => {
-                        if (!link.url) return;
-
-                        const btn = document.createElement('button');
-                        btn.innerHTML = link.label;
-                        btn.disabled = link.active;
-                        btn.addEventListener('click', e => {
-                            e.preventDefault();
-                            const urlParams = new URL(link.url).searchParams;
-                            const page = urlParams.get('page');
-                            currentPage = page;
-                            loadDonuts(page);
-                        });
-                        pagination.appendChild(btn);
+                        }
                     });
                 });
+
+                pagination.innerHTML = '';
+                data.meta.links.forEach(link => {
+                    if (!link.url) return;
+
+                    const btn = document.createElement('button');
+                    btn.innerHTML = link.label;
+                    btn.disabled = link.active;
+                    btn.addEventListener('click', e => {
+                        e.preventDefault();
+                        const urlParams = new URL(link.url).searchParams;
+                        const page = urlParams.get('page');
+                        currentPage = page;
+                        loadDonuts(page);
+                    });
+                    pagination.appendChild(btn);
+                });
+            } catch (error) {
+                errorBox.textContent = 'Fout bij laden donuts: ' + error.message;
+            }
         }
 
         form.addEventListener('submit', async (e) => {
@@ -72,28 +71,30 @@
             errorBox.innerHTML = '';
             const formData = new FormData(form);
 
-            const response = await fetch('/api/donuts', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                },
-                body: formData,
-            });
+            try {
+                const response = await fetch('/api/donuts', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: formData,
+                });
 
-            const text = await response.text();
+                const text = await response.text();
 
-            if (response.status === 201) {
-                form.reset();
-                loadDonuts(currentPage);
-            } else if (response.status === 422) {
-                const json = JSON.parse(text);
-                for (let key in json.errors) {
-                    const msg = document.createElement('div');
-                    msg.textContent = `${key}: ${json.errors[key].join(', ')}`;
-                    errorBox.appendChild(msg);
+                if (response.status === 201) {
+                    form.reset();
+                    await loadDonuts(currentPage);
+                } else if (response.status === 422) {
+                    const json = JSON.parse(text);
+                    for (let key in json.errors) {
+                        const msg = document.createElement('div');
+                        msg.textContent = `${key}: ${json.errors[key].join(', ')}`;
+                        errorBox.appendChild(msg);
+                    }
+                } else {
+                    errorBox.textContent = 'Er is iets misgegaan bij het toevoegen.';
                 }
-            } else {
-                errorBox.textContent = 'Er is iets misgegaan bij het toevoegen.';
+            } catch (error) {
+                errorBox.textContent = 'Fout bij toevoegen donut: ' + error.message;
             }
         });
 
