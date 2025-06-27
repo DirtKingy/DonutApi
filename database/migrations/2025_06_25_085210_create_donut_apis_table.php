@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->tinyInteger('seal_of_approval')->unsigned()->nullable(false);
             $table->decimal('price', '10','2');
+            $table->string('image_url')->nullable();
             $table->timestamps();
         });    
     }

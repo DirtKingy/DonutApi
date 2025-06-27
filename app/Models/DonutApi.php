@@ -14,6 +14,7 @@ class DonutApi extends Model
     protected $fillable = [
         'name',
         'seal_of_approval',
-        'price'
+        'price',
+        'image_url'
     ];
 }
