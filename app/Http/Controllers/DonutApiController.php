@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\DonutApi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use App\Http\Resources\DonutResource;
+use Illuminate\Support\Facades\Storage;
 
 class DonutApiController extends Controller
 {
@@ -11,10 +14,14 @@ class DonutApiController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-        {
-            $sort = $request->query('sort');
-            $order = $request->query('order', 'asc');
+    {
+        $sort = $request->query('sort');
+        $order = $request->query('order', 'asc');
+        $page = $request->query('page', 1);
 
+        $cacheKey = "donuts_{$sort}_{$order}_page_{$page}";
+
+        $donuts = Cache::remember($cacheKey, 60, function () use ($sort, $order) {
             $query = DonutApi::query();
 
             if ($sort === 'name') {
@@ -23,9 +30,11 @@ class DonutApiController extends Controller
                 $query->orderBy('seal_of_approval', $order);
             }
 
-            return response()->json($query->get());
-        }
+            return $query->paginate(10);
+        });
 
+        return DonutResource::collection($donuts);
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -36,13 +45,17 @@ class DonutApiController extends Controller
             'name' => 'required|unique:donuts|max:255',
             'seal_of_approval' => 'required|integer|between:1,5',
             'price' => 'required|numeric|min:0',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('donut_images', 'public');
+            $validated['image_url'] = Storage::url($path);
+        }
+
         $donut = DonutApi::create($validated);
-
-        return response()->json($donut, 201);
+        return new DonutResource($donut);
     }
-
 
     /**
      * Remove the specified resource from storage.
